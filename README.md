@@ -41,9 +41,10 @@ This repository contains my code, projects, and notes from the **[100 Days of Co
   ```bash
   pip install -r requirements.txt
   ```
-5. **Create .env folder to store secrets**
+5. **Create .env folder to store secrets** :
+    refer the .env.example for reference
 
-6. **To Run any Project**:
+7. **To Run any Project**:
   ```bash
   python foldername/filename.py
   ```

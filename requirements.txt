@@ -37,3 +37,4 @@ urllib3==2.3.0
 uvicorn==0.34.0
 wheel==0.45.1
 WTForms==3.2.1
+ipykernel==6.25.2
