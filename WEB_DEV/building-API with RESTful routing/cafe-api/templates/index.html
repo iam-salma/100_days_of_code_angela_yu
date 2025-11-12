@@ -2,9 +2,620 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cafe&Wifi API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafe API - Navigation Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .api-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .api-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h3 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .card p {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .method-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .get { background: rgba(33, 150, 243, 0.3); color: #64B5F6; }
+        .post { background: rgba(76, 175, 80, 0.3); color: #81C784; }
+        .patch { background: rgba(255, 152, 0, 0.3); color: #FFB74D; }
+        .delete { background: rgba(244, 67, 54, 0.3); color: #E57373; }
+
+        .endpoint {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #FFD700;
+            word-break: break-all;
+            margin-bottom: 15px;
+        }
+
+        .btn-try {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-try:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 40px;
+            animation: fadeIn 1s ease 0.5s both;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.4s ease;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .modal-content pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .modal-content button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .modal-content button:hover {
+            transform: scale(1.05);
+        }
+
+        .result-box {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the Cafe & Wifi API</h1>
+    <div class="container">
+        <div class="header">
+            <h1>☕ Cafe API</h1>
+            <p>RESTful API for Discovering Perfect Coffee Spots</p>
+            <a href="https://documenter.getpostman.com/view/41199738/2sAYQakr4x" class="api-link" target="_blank">
+                📖 View Full API Documentation
+            </a>
+        </div>
+
+        <div class="grid">
+            <div class="card" onclick="openModal('random')">
+                <div class="card-icon">🎲</div>
+                <span class="method-badge get">GET</span>
+                <h3>Random Cafe</h3>
+                <p>Get a random cafe from our database. Perfect for discovering new spots!</p>
+                <div class="endpoint">/random</div>
+                <a href="#" class="btn-try" onclick="event.stopPropagation(); openModal('random')">Try It →</a>
+            </div>
+
+            <div class="card" onclick="openModal('all')">
+                <div class="card-icon">📋</div>
+                <span class="method-badge get">GET</span>
+                <h3>All Cafes</h3>
+                <p>Retrieve all cafes in the database, sorted alphabetically by name.</p>
+                <div class="endpoint">/all</div>
+                <a href="#" class="btn-try" onclick="event.stopPropagation(); openModal('all')">Try It →</a>
+            </div>
+
+            <div class="card" onclick="openModal('search')">
+                <div class="card-icon">🔍</div>
+                <span class="method-badge get">GET</span>
+                <h3>Search by Location</h3>
+                <p>Find cafes in a specific location. Pass location as query parameter.</p>
+                <div class="endpoint">/search?loc=location_name</div>
+                <a href="#" class="btn-try" onclick="event.stopPropagation(); openModal('search')">Try It →</a>
+            </div>
+
+            <div class="card" onclick="openModal('add')">
+                <div class="card-icon">➕</div>
+                <span class="method-badge post">POST</span>
+                <h3>Add New Cafe</h3>
+                <p>Add a new cafe to the database with all details including amenities.</p>
+                <div class="endpoint">/add</div>
+                <a href="#" class="btn-try" onclick="event.stopPropagation(); openModal('add')">Try It →</a>
+            </div>
+
+            <div class="card" onclick="openModal('update')">
+                <div class="card-icon">💰</div>
+                <span class="method-badge patch">PATCH</span>
+                <h3>Update Price</h3>
+                <p>Update the coffee price for a specific cafe by ID.</p>
+                <div class="endpoint">/update-price/{cafe_id}?new_price=price</div>
+                <a href="#" class="btn-try" onclick="event.stopPropagation(); openModal('update')">Try It →</a>
+            </div>
+
+            <div class="card" onclick="openModal('delete')">
+                <div class="card-icon">🗑️</div>
+                <span class="method-badge delete">DELETE</span>
+                <h3>Report Closed</h3>
+                <p>Delete a cafe entry when it's permanently closed. Requires API key.</p>
+                <div class="endpoint">/report-closed/{cafe_id}?api-key=key</div>
+                <a href="#" class="btn-try" onclick="event.stopPropagation(); openModal('delete')">Try It →</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with Flask & SQLAlchemy | RESTful API Design</p>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal" class="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(type) {
+            const modal = document.getElementById('modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            let content = '';
+            
+            switch(type) {
+                case 'random':
+                    content = `
+                        <h2>🎲 Get Random Cafe</h2>
+                        <p>Click the button below to fetch a random cafe from the database.</p>
+                        <button onclick="fetchRandom()">Get Random Cafe</button>
+                        <div id="result" class="result-box" style="display:none;"></div>
+                    `;
+                    break;
+                
+                case 'all':
+                    content = `
+                        <h2>📋 Get All Cafes</h2>
+                        <p>Click the button below to fetch all cafes from the database.</p>
+                        <button onclick="fetchAll()">Get All Cafes</button>
+                        <div id="result" class="result-box" style="display:none;"></div>
+                    `;
+                    break;
+                
+                case 'search':
+                    content = `
+                        <h2>🔍 Search by Location</h2>
+                        <p>Enter a location to search for cafes:</p>
+                        <input type="text" id="location" placeholder="e.g., Peckham" />
+                        <button onclick="searchLocation()">Search</button>
+                        <div id="result" class="result-box" style="display:none;"></div>
+                    `;
+                    break;
+                
+                case 'add':
+                    content = `
+                        <h2>➕ Add New Cafe</h2>
+                        <input type="text" id="name" placeholder="Cafe Name" required />
+                        <input type="text" id="map_url" placeholder="Map URL" required />
+                        <input type="text" id="img_url" placeholder="Image URL" required />
+                        <input type="text" id="loc" placeholder="Location" required />
+                        <input type="text" id="seats" placeholder="Number of Seats" required />
+                        <input type="text" id="coffee_price" placeholder="Coffee Price (e.g., £2.50)" />
+                        <label><input type="checkbox" id="wifi" /> Has WiFi</label><br>
+                        <label><input type="checkbox" id="sockets" /> Has Sockets</label><br>
+                        <label><input type="checkbox" id="toilet" /> Has Toilet</label><br>
+                        <label><input type="checkbox" id="calls" /> Can Take Calls</label><br><br>
+                        <button onclick="addCafe()">Add Cafe</button>
+                        <div id="result" class="result-box" style="display:none;"></div>
+                    `;
+                    break;
+                
+                case 'update':
+                    content = `
+                        <h2>💰 Update Coffee Price</h2>
+                        <input type="number" id="cafe_id" placeholder="Cafe ID" required />
+                        <input type="text" id="new_price" placeholder="New Price (e.g., £3.00)" required />
+                        <button onclick="updatePrice()">Update Price</button>
+                        <div id="result" class="result-box" style="display:none;"></div>
+                    `;
+                    break;
+                
+                case 'delete':
+                    content = `
+                        <h2>🗑️ Report Closed Cafe</h2>
+                        <input type="number" id="cafe_id" placeholder="Cafe ID" required />
+                        <input type="text" id="api_key" placeholder="API Key" value="TopSecretAPIKey" required />
+                        <button onclick="deleteCafe()">Delete Cafe</button>
+                        <div id="result" class="result-box" style="display:none;"></div>
+                    `;
+                    break;
+            }
+            
+            modalBody.innerHTML = content;
+            modal.classList.add('active');
+        }
+        
+        function closeModal(event) {
+            if (!event || event.target.id === 'modal') {
+                document.getElementById('modal').classList.remove('active');
+            }
+        }
+        
+        function showResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+        
+        async function fetchRandom() {
+            try {
+                const response = await fetch('/random');
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+        
+        async function fetchAll() {
+            try {
+                const response = await fetch('/all');
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+        
+        async function searchLocation() {
+            const location = document.getElementById('location').value;
+            if (!location) {
+                alert('Please enter a location');
+                return;
+            }
+            try {
+                const response = await fetch(`/search?loc=${encodeURIComponent(location)}`);
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+        
+        async function addCafe() {
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('map_url', document.getElementById('map_url').value);
+            formData.append('img_url', document.getElementById('img_url').value);
+            formData.append('loc', document.getElementById('loc').value);
+            formData.append('seats', document.getElementById('seats').value);
+            formData.append('coffee_price', document.getElementById('coffee_price').value);
+            formData.append('wifi', document.getElementById('wifi').checked ? '1' : '0');
+            formData.append('sockets', document.getElementById('sockets').checked ? '1' : '0');
+            formData.append('toilet', document.getElementById('toilet').checked ? '1' : '0');
+            formData.append('calls', document.getElementById('calls').checked ? '1' : '0');
+            
+            try {
+                const response = await fetch('/add', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+        
+        async function updatePrice() {
+            const cafeId = document.getElementById('cafe_id').value;
+            const newPrice = document.getElementById('new_price').value;
+            
+            if (!cafeId || !newPrice) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/update-price/${cafeId}?new_price=${encodeURIComponent(newPrice)}`, {
+                    method: 'PATCH'
+                });
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+        
+        async function deleteCafe() {
+            const cafeId = document.getElementById('cafe_id').value;
+            const apiKey = document.getElementById('api_key').value;
+            
+            if (!cafeId || !apiKey) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/report-closed/${cafeId}?api-key=${encodeURIComponent(apiKey)}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+    </script>
 </body>
 </html>

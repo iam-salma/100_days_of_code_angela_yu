@@ -1,5 +1,7 @@
 # https://documenter.getpostman.com/view/41199738/2sAYQakr4x get my API docs!!
-# from flask import Flask, jsonify, render_template, request
+# Use postman to test endpoints
+
+from flask import Flask, jsonify, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Boolean
@@ -10,8 +12,10 @@ app = Flask(__name__)
 # CREATE DB
 class Base(DeclarativeBase):
     pass
+
 # Connect to Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cafes.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
@@ -30,12 +34,6 @@ class Cafe(db.Model):
     coffee_price: Mapped[str] = mapped_column(String(250), nullable=True)
 
     def to_dict(self):
-        # dictionary = {}
-        # for column in self.__table__.columns:
-        #     dictionary[column.name] = getattr(self, column.name)
-        # return dictionary
-
-        # Method 2. Alternatively use Dictionary Comprehension to do the same thing.
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 with app.app_context():
@@ -47,54 +45,65 @@ def home():
     return render_template("index.html")
 
 # HTTP GET - Read Record
-# @app.route("/random", method="GET") is same as
 @app.route("/random")
 def get_random_cafe():
-    result = db.session.execute(db.select(Cafe)).scalars()
-    all_cafes = result.all()
-    random_cafe = random.choice(all_cafes)
-    return jsonify(cafe=random_cafe.to_dict())
+    result = db.session.execute(db.select(Cafe))
+    all_cafes = result.scalars().all()
+    if all_cafes:
+        random_cafe = random.choice(all_cafes)
+        return jsonify(cafe=random_cafe.to_dict())
+    else:
+        return jsonify(error={"Not Found": "No cafes in database."}), 404
 
 @app.route("/all")
 def all_cafes():
-    result = db.session.execute(db.select(Cafe).order_by(Cafe.name)).scalars().all()
-    all_cafes = [cafe.to_dict() for cafe in result]
+    result = db.session.execute(db.select(Cafe).order_by(Cafe.name))
+    all_cafes = [cafe.to_dict() for cafe in result.scalars().all()]
     return jsonify(cafes=all_cafes)
 
 @app.route("/search")
 def cafes_in_loc():
     query_location = request.args.get("loc")
     if query_location:
-        result = db.session.execute(db.select(Cafe).where(Cafe.location == query_location)).scalars().all() # .where(Cafe.location.contains(query_location)
-        all_cafes_in_loc = [cafe.to_dict() for cafe in result]
-        return jsonify(cafes=all_cafes_in_loc)
+        result = db.session.execute(
+            db.select(Cafe).where(Cafe.location == query_location)
+        )
+        all_cafes_in_loc = [cafe.to_dict() for cafe in result.scalars().all()]
+        if all_cafes_in_loc:
+            return jsonify(cafes=all_cafes_in_loc)
+        else:
+            return jsonify(error={"Not Found": "Sorry, we don't have a cafe at that location."}), 404
     else:
-        return jsonify(error={"Not Found": "Sorry, we don't have a cafe at that location."}), 400
+        return jsonify(error={"Bad Request": "Please provide a location parameter."}), 400
 
 # HTTP POST - Create Record
 @app.route("/add", methods=["POST"])
 def post_new_cafe():
-    new_cafe = Cafe(
-        name=request.form.get("name"),
-        map_url=request.form.get("map_url"),
-        img_url=request.form.get("img_url"),
-        location=request.form.get("loc"),
-        has_sockets=bool(request.form.get("sockets")),
-        has_toilet=bool(request.form.get("toilet")),
-        has_wifi=bool(request.form.get("wifi")),
-        can_take_calls=bool(request.form.get("calls")),
-        seats=request.form.get("seats"),
-        coffee_price=request.form.get("coffee_price"),
-    )
-    db.session.add(new_cafe)
-    db.session.commit()
-    return jsonify(response={"success": "Successfully added the new cafe."})
+    try:
+        new_cafe = Cafe(
+            name=request.form.get("name"),
+            map_url=request.form.get("map_url"),
+            img_url=request.form.get("img_url"),
+            location=request.form.get("loc"),
+            has_sockets=bool(int(request.form.get("sockets", 0))),
+            has_toilet=bool(int(request.form.get("toilet", 0))),
+            has_wifi=bool(int(request.form.get("wifi", 0))),
+            can_take_calls=bool(int(request.form.get("calls", 0))),
+            seats=request.form.get("seats"),
+            coffee_price=request.form.get("coffee_price"),
+        )
+        db.session.add(new_cafe)
+        db.session.commit()
+        return jsonify(response={"success": "Successfully added the new cafe."}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(error={"Bad Request": str(e)}), 400
 
 # HTTP PUT/PATCH - Update Record
-@app.route("/update-price/<cafe_id>", methods=["PATCH"])
+@app.route("/update-price/<int:cafe_id>", methods=["PATCH"])
 def change_price(cafe_id):
     new_price = request.args.get("new_price")
-    cafe = db.get_or_404(Cafe, cafe_id)
+    cafe = db.session.get(Cafe, cafe_id)
     if cafe:
         cafe.coffee_price = new_price
         db.session.commit()
@@ -103,11 +112,11 @@ def change_price(cafe_id):
         return jsonify(error={"Not Found": "Sorry a cafe with that id was not found in the database."}), 404
 
 # HTTP DELETE - Delete Record
-@app.route("/report-closed/<cafe_id>", methods=["DELETE"])
+@app.route("/report-closed/<int:cafe_id>", methods=["DELETE"])
 def delete_cafe(cafe_id):
     api_key = request.args.get("api-key")
     if api_key == "TopSecretAPIKey":
-        cafe_to_delete = db.get_or_404(Cafe, cafe_id)
+        cafe_to_delete = db.session.get(Cafe, cafe_id)
         if cafe_to_delete:
             db.session.delete(cafe_to_delete)
             db.session.commit()
@@ -119,4 +128,4 @@ def delete_cafe(cafe_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
